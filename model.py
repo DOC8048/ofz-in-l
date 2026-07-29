@@ -277,7 +277,9 @@ ofz_in_l_gos = build_government_ofz_in(const, inf_res)
 
 # %%
 def build_government_ofz_pd(const, ofz_pd, ofz_in_l_gos):
-    ofz_pd_gos = ofz_in_l_gos[['Год']].copy()
+    # Берем только строки, где Год != 'Итого'
+    ofz_pd_gos = ofz_in_l_gos[ofz_in_l_gos['Год'] != 'Итого'][['Год']].copy()
+    # ofz_pd_gos = ofz_in_l_gos[['Год']].copy()
     ofz_pd_gos['Тело долга'] = const['Привлекаемые_средства']
     ofz_pd_gos['Расходы на купон'] = ofz_pd_gos['Тело долга'] * const['Ставка_купона_ОФЗ_ПД']
     ofz_pd_gos['Сумма возврата,НДФЛ'] = ofz_pd['НДФЛ']*const['Количество_человек']
@@ -285,8 +287,8 @@ def build_government_ofz_pd(const, ofz_pd, ofz_in_l_gos):
 
 
 # %%
-    cols2 = ['Тело долга', 'Расходы на купон','Сумма возврата,НДФЛ','Итого при учете возврата НДФЛ']
-    total_ofz_pd_gos = pd.DataFrame(ofz_pd_gos[cols2].sum()).T
+    cols2 = ['Расходы на купон','Сумма возврата,НДФЛ','Итого при учете возврата НДФЛ']
+    total_ofz_pd_gos = pd.DataFrame([ofz_pd_gos[cols2].sum()])
     total_ofz_pd_gos['Год'] = 'Итого'
     itog_ofz_pd_gos = pd.concat([ofz_pd_gos,total_ofz_pd_gos],ignore_index=True)
     return itog_ofz_pd_gos
@@ -304,8 +306,8 @@ def run_model():
     depozit = calculate_depozit(const,inf_res,ofz_in_l)
     doxod_za_period = build_summary_table(inf_res,ofz_in_l,ofz_pd,depozit)
     itog_ofz_in_l_gos  = build_government_ofz_in(const,inf_res)
-    itog_ofz_pd = build_government_ofz_pd (const,ofz_pd,ofz_in_l_gos,)
-    return doxod_za_period,itog_ofz_pd,itog_ofz_in_l_gos
+    itog_ofz_pd_gos = build_government_ofz_pd (const,ofz_pd,ofz_in_l_gos,)
+    return doxod_za_period,itog_ofz_pd_gos,itog_ofz_in_l_gos
 
 if __name__ == "__main__":
     doxod_za_period ,itog_ofz_pd,itog_ofz_in_l_gos = run_model()
@@ -314,5 +316,5 @@ if __name__ == "__main__":
     print("\n=== Нагрузка ОФЗ-ИН ===")
     print(itog_ofz_in_l_gos)
     print("\n=== Нагрузка ОФЗ-ПД ===")
-    print(itog_ofz_pd)
+    print(itog_ofz_pd_gos)
 
