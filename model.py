@@ -14,17 +14,17 @@ from datetime import date
 
 # %%
 def get_constants():
-    const = {'Привлекаемые_средства': 380_000_000_000,
+    DEFAULT_CONST= {'Привлекаемые_средства': 380_000_000_000,
             'Ставка_купона_ОФЗ_ИН_л': 0.025,
             'Ставка_купона_ОФЗ_ПД': 0.1374,
-            'Номинал_ОФЗ_ИН': 10_000,
+            'Номинал_ОФЗ_ИН': 100_000,
             'Номинал_ОФЗ_ПД': 1000,
             'Количество_человек': 2_000_000,
             'НДФЛ': 0.13
         }
-    return const
+    return DEFAULT_CONST
 
-const = get_constants()
+DEFAULT_CONST = get_constants()
 
 # %%
 # загружаем функии из модуля cbr_inflation
@@ -123,7 +123,6 @@ def calculate_ofz_in_l(const, inf_res):
  'Доход с вычетом']]
     return ofz_in_l
 
-ofz_in_l = calculate_ofz_in_l(const, inf_res)
 
 
 # %% [markdown]
@@ -143,7 +142,6 @@ def calculate_ofz_pd(const, ofz_in_l):
     ofz_pd ['Доход после вычета налога'] = ofz_pd['Доход, руб'] - ofz_pd ['НДФЛ']
     return ofz_pd
 
-ofz_pd = calculate_ofz_pd(const, ofz_in_l)
 
 # %% [markdown]
 # # 5. Депозит
@@ -186,8 +184,7 @@ def calculate_depozit(const, inf_res, ofz_in_l):
                    "Сумма на конец года",
                     "Проценты"]]
     return depozit
-
-depozit = calculate_depozit(const, inf_res, ofz_in_l)         
+        
 
 # %% [markdown]
 # # Итоговая таблица доходов
@@ -249,7 +246,6 @@ def build_summary_table(inf_res, ofz_in_l, ofz_pd, depozit):
     doxod_za_period['Реальный доход'] = doxod_za_period['Итоговая сумма'] - ofz_in_l['На руках у человека, руб']
     doxod_za_period.loc[doxod_za_period['Инструмент'] == 'ОФЗ ИН доход', 'Очистка инфляции'] = None
     return doxod_za_period
-dohod_za_period = build_summary_table(inf_res, ofz_in_l, ofz_pd, depozit)
 
 
 # %% [markdown]
@@ -273,7 +269,6 @@ def build_government_ofz_in(const, inf_res):
     itog_ofz_in_l_gos = pd.concat([ofz_in_l_gos,total_ofz_in_l_gos],ignore_index=True)
     return itog_ofz_in_l_gos
 
-ofz_in_l_gos = build_government_ofz_in(const, inf_res)
 
 # %%
 def build_government_ofz_pd(const, ofz_pd, ofz_in_l_gos):
@@ -293,24 +288,24 @@ def build_government_ofz_pd(const, ofz_pd, ofz_in_l_gos):
     itog_ofz_pd_gos = pd.concat([ofz_pd_gos,total_ofz_pd_gos],ignore_index=True)
     return itog_ofz_pd_gos
 
-itog_ofz_pd_gos = build_government_ofz_pd(const, ofz_pd, ofz_in_l_gos)
-
 # ============================================
 # 8. Главная функция, запускающая всю модель
 # ============================================
-def run_model():
+def run_model(const=None):
+    if const is None:
+    # Если const не передан, используем DEFAULT_CONST
+        const = DEFAULT_CONST
     inf_res = prepare_inflation_and_rate()
-    const = get_constants()
     ofz_in_l = calculate_ofz_in_l(const, inf_res)
     ofz_pd = calculate_ofz_pd(const,ofz_in_l)
     depozit = calculate_depozit(const,inf_res,ofz_in_l)
     doxod_za_period = build_summary_table(inf_res,ofz_in_l,ofz_pd,depozit)
     itog_ofz_in_l_gos  = build_government_ofz_in(const,inf_res)
-    itog_ofz_pd_gos = build_government_ofz_pd (const,ofz_pd,ofz_in_l_gos,)
+    itog_ofz_pd_gos = build_government_ofz_pd (const,ofz_pd,itog_ofz_in_l_gos)
     return doxod_za_period,itog_ofz_pd_gos,itog_ofz_in_l_gos
 
 if __name__ == "__main__":
-    doxod_za_period ,itog_ofz_pd,itog_ofz_in_l_gos = run_model()
+    doxod_za_period ,itog_ofz_pd_gos,itog_ofz_in_l_gos = run_model()
     print("=== Доход по инструментам ===")
     print(doxod_za_period)
     print("\n=== Нагрузка ОФЗ-ИН ===")
