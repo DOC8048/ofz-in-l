@@ -6,7 +6,7 @@ from datetime import datetime
 def get_inflation(start_date='2013-01-01', end_date=None):
     """
     Получает данные по инфляции (индекс потребительских цен) с сайта ЦБ РФ.
-    Возвращает pandas Series с индексом из дат и значениями инфляции (в процентах).
+    Возвращает pandas DataFreme из дат и значениями инфляции (в процентах).
     """
     if end_date is None:
         end_date = datetime.now().strftime('%Y-%m-%d')
