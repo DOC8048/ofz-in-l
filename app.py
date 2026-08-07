@@ -1,11 +1,59 @@
 import streamlit as st
 import pandas as pd
 from model import run_model
+import function.cbr_inflation as cbr_inf
+# загружаем из модуля new_function
+from function.API_in_function import get_deposit_rates
+@st.cache_data(ttl=14400)
+def get_target_inflation():
+    """
+    Один раз запрос к API.
+    Если ошибка — возвращаем дефолт.
+    Результат кэшируется на 4 часа.
+    """
+    try:
+        value = cbr_inf.get_latest_target()
+        if value is None:
+            return None
+        return float(value)
+    except Exception:
+        return None
 
+@st.cache_data(ttl=14400)
+def get_target_deposit():
+    try:
+        dep =get_deposit_rates()
+        if dep.empty or 'rate' not in dep.columns:
+            return None
+        return dep['rate'].iloc[-1]
+    except Exception:
+        return None
+
+@st.cache_data(ttl=14400)
+def get_current_inflation():
+    try:
+        value1 = cbr_inf.get_latest_inflation()
+        if value1 is None:
+            return None
+        return float(value1)
+    except Exception:
+        return None
+target_inf = get_target_inflation()
+target_dep = get_target_deposit()
+current_inflation = get_current_inflation()
 st.title("📊 Модель ОФЗ-ИН")
 
 st.sidebar.header("Параметры модели")
 
+# Если хотя бы один из ключевых источников не ответил — показываем большую ошибку
+if target_inf is None or target_dep is None or current_inflation is None:
+    st.error("⚠️ Серверы ЦБ или внешние API временно недоступны. Без этих данных расчёт модели невозможен.")
+    
+    # Подсказка, сколько ждать до следующей попытки
+    st.info("Кэш обновится автоматически через ~4 часа. Либо попробуйте перезагрузить страницу позже.")
+    
+    # Важно: дальше код не выполняется, модель не запускается
+    st.stop()
 # Дефолтные значения
 DEFAULTS = {
     'attracted': 380_000_000_000,
@@ -15,19 +63,62 @@ DEFAULTS = {
     'nominal_oin': 10_000,
     'nominal_pd': 1000,
     'ndfl': 13.0
+    #'inf_forecast': get_target_inflation()
 }
 
 # Инициализация session_state (если ещё нет)
 for key, value in DEFAULTS.items():
     if key not in st.session_state:
         st.session_state[key] = value
+if 'inf_forecast' not in st.session_state:
+    st.session_state['inf_forecast'] = target_inf
+if 'deposit_rate' not in st.session_state:
+    st.session_state['deposit_rate'] = target_dep
+if 'deposit_decrement' not in st.session_state:
+    st.session_state['deposit_decrement'] = 2.5
+
 
 # Обработка сброса (выполняется ДО создания виджетов)
 if st.session_state.get('reset', False):
     for key, value in DEFAULTS.items():
-        st.session_state[key] = value
-    st.session_state['reset'] = False
-    # не нужно st.rerun(), так как скрипт уже перезапущен
+        st.session_state[key] = value     
+    # Удаляем пользовательские ключи, чтобы при следующем запуске они взялись из API
+    st.session_state['inf_forecast'] = target_inf
+    st.session_state['deposit_rate'] = target_dep
+    st.session_state['deposit_decrement'] = 2.5
+    st.session_state['reset'] = False   
+    # не нужно st.rerun(), так как скрипт уже перезапущен       
+
+# В app.py после инициализации session_state
+st.sidebar.info(f"Фактическая инфляция (ЦБ): {current_inflation}%")
+st.sidebar.caption("Слайдер ниже — позволяет строить модель по сценарному предположению о будущей инфляции (ежегодно).")
+# Параметры для депозита и инфляции
+inf_forecast = st.sidebar.number_input(
+    "Прогноз инфляции на будущие годы, %",
+    value=st.session_state['inf_forecast'],  # целевой уровень из API
+    step=0.1,
+    format="%.1f",
+    key='inf_forecast'
+)
+st.sidebar.write(f"Введено: {inf_forecast:.1f}%")
+
+deposit_rate = st.sidebar.number_input(
+    "Текущая ставка депозита, %",
+    value=st.session_state['deposit_rate'],  # подставь значение по умолчанию из API
+    step=0.1,
+    format="%.2f",
+    key='deposit_rate'
+)
+st.sidebar.write(f"Введено: {deposit_rate:.2f}%")
+
+deposit_decrement = st.sidebar.number_input(
+    "Коэффициент снижения ставки, %",
+    value=st.session_state['deposit_decrement'],
+    step=0.1,
+    format="%.1f",
+    key='deposit_decrement'
+)
+st.sidebar.write(f"Введено: {deposit_decrement:.1f}%")
 
 # Виджеты с привязкой к session_state
 attracted = st.sidebar.number_input(
@@ -94,6 +185,13 @@ if st.sidebar.button("Сбросить все"):
     st.session_state['reset'] = True
     st.rerun()
 
+# Словарь пользовательских параметров
+user_params = {
+    'inf_override': [inf_forecast / 100, inf_forecast / 100],  # для двух прогнозных лет
+    'deposit_rate': deposit_rate / 100,  # переводим в десятичную дробь
+    'deposit_decrement': deposit_decrement,
+    
+}
 # Собираем словарь констант
 const = {
     'Привлекаемые_средства': attracted,
@@ -102,12 +200,16 @@ const = {
     'Ставка_купона_ОФЗ_ПД': coupon_pd/100,
     'Номинал_ОФЗ_ИН': nominal_oin,
     'Номинал_ОФЗ_ПД': nominal_pd,
-    'НДФЛ': ndfl/100
+    'НДФЛ': ndfl/100,
 }
 
 # Запускаем модель с пользовательскими параметрами
-doxod_za_period, itog_ofz_pd_gos, itog_ofz_in_l_gos = run_model(const)
-
+doxod_za_period, itog_ofz_pd_gos, itog_ofz_in_l_gos = run_model(
+    const,
+    inf_override=user_params['inf_override'],
+    deposit_rate=user_params['deposit_rate'],
+    deposit_decrement=user_params['deposit_decrement'],
+)
 st.subheader("Итоговый доход по инструментам")
 st.dataframe(doxod_za_period)
 
