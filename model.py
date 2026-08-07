@@ -29,9 +29,14 @@ DEFAULT_CONST = get_constants()
 # %%
 # загружаем функии из модуля cbr_inflation
 
-def prepare_inflation_and_rate():
+def prepare_inflation_and_rate(
+    inf_override=None,  # список/массив значений инфляции на прогнозные годы)
+    deposit_rate=None,
+    deposit_decrement=None
+    ):
+    # Получаем базовую инфляцию из API
     inf = cbr_inf.get_inflation()
-# выбираем только последний год и последнее значение инфляции
+    # выбираем только последний год и последнее значение инфляции
     inf_d = inf.copy()
     inf_d['Год'] = inf_d['date'].dt.year
     inf_d.rename(columns={
@@ -39,28 +44,44 @@ def prepare_inflation_and_rate():
     'target': 'Цель по инфляции'},inplace=True)
     inf_d = inf_d[['Год','Инфляция']]
     inf_d = inf_d.tail(1)
-# автоматизируем продлжения ряда лет,и настраиваем вывод целовой инфляции
+    # автоматизируем продлжения ряда лет,и настраиваем вывод целовой инфляции
     current_year = date.today().year
-    forecast_years = [ current_year + 1, current_year + 2]
+    forecast_years = [current_year + 1, current_year + 2]
+    # Если пользователь передал свой прогноз инфляции, используем его
+    if inf_override is not None:
+        inf_vals = inf_override 
+    else: 
+        inf_bas = inf['target'].iloc[-1]
+        inf_vals = [inf_bas] *len(forecast_years)
+
     inf2 = pd.DataFrame({
-    'Год': forecast_years,
-    'Инфляция': inf['target'].iloc[-1]})
+        'Год': forecast_years,
+        'Инфляция': inf_vals})
     inf_res = pd.concat([inf_d,inf2],ignore_index=True)
 
 # %%
-    df = get_deposit_rates()
-    sd = df.tail(1)
-# создаем переменную имеющую единственную последнюю актуальную ставку
-    value = sd['rate'].iloc[0]
+    # Cтавка депозита 
+    if deposit_rate is None:
+    # берем из API
+        df = get_deposit_rates()
+        sd = df.tail(1)
+    # создаем переменную имеющую единственную последнюю актуальную ставку
+        value = sd['rate'].iloc[0]
+    else:
+        value = deposit_rate
 
 # %%
-    DEPOSIT_DECREMENT = 2.5 # коэфициент снижения 
+    # Коэффициент снижения
+    if deposit_decrement is None:
+        dec = 2.5
+    else:
+        dec = deposit_decrement
     base = value
-    inf_res['Ставка депозита'] = base - (DEPOSIT_DECREMENT/100) * inf_res.index
+    inf_res['Ставка депозита'] = base - (dec/100) * inf_res.index
     inf_res[['Инфляция','Ставка депозита']] = inf_res[['Инфляция','Ставка депозита']]/100 # переводим проценты в числа
     return inf_res
 
-inf_res = prepare_inflation_and_rate()
+
 
 # %% [markdown]
 # # 3. ОФЗ ИН (л)
@@ -174,7 +195,8 @@ def calculate_depozit(const, inf_res, ofz_in_l):
     depozit['Проценты']= depozit['Сумма на конец года'] - depozit['Сумма на начало года']
 
 # %%
-    depozit = depozit [["Год", "Привлекаемые средства", # перезаписываем в нужном порядке
+    depozit = depozit [["Год", 
+                    "Привлекаемые средства", # перезаписываем в нужном порядке
                    "Количество человек", 
                    "На руках у человека",
                    "Ставка депозита",
@@ -291,11 +313,15 @@ def build_government_ofz_pd(const, ofz_pd, ofz_in_l_gos):
 # ============================================
 # 8. Главная функция, запускающая всю модель
 # ============================================
-def run_model(const=None):
+def run_model(const=None,inf_override=None,deposit_rate=None, deposit_decrement=None):
     if const is None:
     # Если const не передан, используем DEFAULT_CONST
         const = DEFAULT_CONST
-    inf_res = prepare_inflation_and_rate()
+    inf_res = prepare_inflation_and_rate(
+        inf_override=inf_override,
+        deposit_rate=deposit_rate,
+        deposit_decrement=deposit_decrement)
+    
     ofz_in_l = calculate_ofz_in_l(const, inf_res)
     ofz_pd = calculate_ofz_pd(const,ofz_in_l)
     depozit = calculate_depozit(const,inf_res,ofz_in_l)
