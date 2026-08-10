@@ -14,6 +14,7 @@ from datetime import date
 
 # %%
 def get_constants():
+    """Словарь с дефолтными значениями"""
     DEFAULT_CONST= {'Привлекаемые_средства': 380_000_000_000,
             'Ставка_купона_ОФЗ_ИН_л': 0.025,
             'Ставка_купона_ОФЗ_ПД': 0.1374,
@@ -30,10 +31,22 @@ DEFAULT_CONST = get_constants()
 # загружаем функии из модуля cbr_inflation
 
 def prepare_inflation_and_rate(
-    inf_override=None,  # список/массив значений инфляции на прогнозные годы)
-    deposit_rate=None,
-    deposit_decrement=None
+        inf_override: list[float] | None=None,  # список/массив значений инфляции на прогнозные годы)
+        deposit_rate: float | None=None,
+        deposit_decrement: float | None=None
     ):
+    """
+    Формирует таблицу `inf_res` с прогнозом инфляции и ставкой депозита.
+    Если параметры не переданы, использует данные из API ЦБ
+    
+    Параметры:
+        inf_override (list[float]) | None=None: список значений инфляции для прогнозных лет (в долях) от пользоватлея или по умолчанию целевая из API ЦБ
+        deposit_rate (float) | None=None: текущая ставка депозита (в долях), аналогично с inf_override
+        deposit_decrement (float) | None=None: ежегодное снижение ставки (в процентах, по умолчанию 2.5), также возможно изменнение пользователем
+    
+    Возвращает:
+        pd.DataFrame: таблица с колонками 'Год', 'Инфляция', 'Ставка депозита' (в долях).
+    """
     # Получаем базовую инфляцию из API
     inf = cbr_inf.get_inflation()
     # выбираем только последний год и последнее значение инфляции
@@ -87,7 +100,19 @@ def prepare_inflation_and_rate(
 # # 3. ОФЗ ИН (л)
 
 # %%
-def calculate_ofz_in_l(const, inf_res):
+def calculate_ofz_in_l(
+    const: dict, 
+    inf_res: pd.DataFrame
+    ):
+    """
+    Рассчитывает все показатели для ОФЗ-ИН (индексируемые облигации) на основе констант и инфляции.
+    Параметры:
+        const (dict): словарь с константами модели
+        inf_res (pd.DataFrame): таблица с колонками 'Год', 'Инфляция', 'Ставка депозита'.
+
+    Возвращает:
+        pd.DataFrame: таблица со всеми расчётными колонками для ОФЗ-ИН
+    """
     ofz_in_l =inf_res.copy()
 
 # %%
@@ -150,7 +175,18 @@ def calculate_ofz_in_l(const, inf_res):
 # # 4. ОФЗ ПД
 
 # %%
-def calculate_ofz_pd(const, ofz_in_l):
+def calculate_ofz_pd(
+    const: dict, 
+    ofz_in_l: pd.DataFrame
+    ):
+    """
+     Рассчитывает показатели для ОФЗ-ПД (постоянный купон) на основе данных из ОФЗ-ИН.
+        Параметры:
+            const (dict): словарь с константами
+            ofz_in_l (pd.DataFrame): результат функции calculate_ofz_in_l.
+        Возвращает:
+            pd.DataFrame: таблица с доходами по ОФЗ-ПД
+    """
     ofz_pd = ofz_in_l [['Год']].copy()
     ofz_pd['Привлекаемые средства'] = const ["Привлекаемые_средства"]
     ofz_pd ["Количество человек"] = const ["Количество_человек"]
@@ -168,7 +204,19 @@ def calculate_ofz_pd(const, ofz_in_l):
 # # 5. Депозит
 
 # %%
-def calculate_depozit(const, inf_res, ofz_in_l):
+def calculate_depozit(
+        const:dict, 
+        inf_res: pd.DataFrame, 
+        ofz_in_l: pd.DataFrame):
+    """
+     Рассчитывает накопления по депозиту с ежемесячной капитализацией.
+    Параметры:
+        const (dict): словарь с константами.
+        inf_res (pd.DataFrame): таблица с 'Ставка депозита' (в долях).
+        ofz_in_l (pd.DataFrame): результат ОФЗ-ИН для получения 'На руках у человека'.
+    Возвращает:
+        pd.DataFrame: таблица с расчётами по депозиту.
+    """
     depozit = ofz_in_l[['Год']].copy()
     depozit ['Привлекаемые средства'] = const ['Привлекаемые_средства']
     depozit ['Количество человек'] = const ['Количество_человек']
@@ -212,7 +260,25 @@ def calculate_depozit(const, inf_res, ofz_in_l):
 # # Итоговая таблица доходов
 
 # %%
-def build_summary_table(inf_res, ofz_in_l, ofz_pd, depozit):
+def build_summary_table(
+        inf_res: pd.DataFrame, 
+        ofz_in_l: pd.DataFrame, 
+        ofz_pd: pd.DataFrame, 
+        depozit: pd.DataFrame 
+        )-> pd.DataFrame:
+    """
+    Строит итоговую таблицу доходов по трём инструментам (ОФЗ-ИН, ОФЗ-ПД, депозит) с учётом инфляции и налогов
+    Параметры:
+        inf_res (pd.DataFrame): таблица с инфляцией (для расчёта инфляционного фактора).
+        ofz_in_l, ofz_pd, depozit (pd.DataFrame): результаты соответствующих функций расчёта.
+    Возвращает:
+        pd.DataFrame: сводная таблица по инструментам с колонками:
+            - Инструмент
+            - Доход (суммарный за период)
+            - Итоговая сумма (номинал + доход с вычетом/налогом)
+            - Очистка инфляции
+            - Реальный доход
+    """
     df_s_merge = ofz_in_l[['Год', 'На руках у человека, руб']].copy()
     df_s_merge.rename(columns={'На руках у человека, руб': 'Вложения'}, inplace=True)
 
@@ -275,7 +341,22 @@ def build_summary_table(inf_res, ofz_in_l, ofz_pd, depozit):
 # 
 
 # %%
-def build_government_ofz_in(const, inf_res):
+def build_government_ofz_in(
+        const: dict, 
+        inf_res: pd.DataFrame
+        ):
+    """
+    Параметры:
+        const (dict): словарь с константами
+        inf_res (pd.DataFrame): таблица с инфляцией.
+    Возвращает:
+        pd.DataFrame: таблица с колонками:
+            - Год ('Итого' в последней строке)
+            - Прибавка от инфляции
+            - Тело долга
+            - Расходы на купоны
+            - Общие затраты
+    """
     ofz_in_l_gos = inf_res.copy()
     ofz_in_l_gos['Прибавка от инфляции'] = const['Привлекаемые_средства']*ofz_in_l_gos['Инфляция']
     ofz_in_l_gos['Инфляционный множитель'] = (1+ofz_in_l_gos ['Инфляция']).cumprod()
@@ -293,7 +374,24 @@ def build_government_ofz_in(const, inf_res):
 
 
 # %%
-def build_government_ofz_pd(const, ofz_pd, ofz_in_l_gos):
+def build_government_ofz_pd(
+            const: dict,
+            ofz_pd: pd.DataFrame, 
+            ofz_in_l_gos: pd.DataFrame):
+    """
+    Рассчитывает нагрузку на государство по ОФЗ-ПД (купоны, возврат НДФЛ).
+    Параметры:
+        const (dict): словарь с константами 
+        ofz_pd (pd.DataFrame): результат calculate_ofz_pd (нужен 'НДФЛ').
+        ofz_in_l_gos (pd.DataFrame): результат build_government_ofz_in (нужен для фильтрации по годам).
+    Возвращает:
+        pd.DataFrame: таблица с колонками:
+            - Год ('Итого' в последней строке)
+            - Тело долга
+            - Расходы на купон
+            - Сумма возврата НДФЛ
+            - Итого при учёте возврата НДФЛ
+        """
     # Берем только строки, где Год != 'Итого'
     ofz_pd_gos = ofz_in_l_gos[ofz_in_l_gos['Год'] != 'Итого'][['Год']].copy()
     # ofz_pd_gos = ofz_in_l_gos[['Год']].copy()
@@ -313,15 +411,19 @@ def build_government_ofz_pd(const, ofz_pd, ofz_in_l_gos):
 # ============================================
 # 8. Главная функция, запускающая всю модель
 # ============================================
-def run_model(const=None,inf_override=None,deposit_rate=None, deposit_decrement=None):
+def run_model(
+    const: dict | None=None,
+    inf_override: list[float] | None = None,
+    deposit_rate: float | None = None,
+    deposit_decrement: float | None=None
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
-    Функция запускает всю модель принимая следующие данные:
-        const — словарь заначение, основных показателей модели. Не включает процентные ставки.
-            Использует как дефолтные заначения(по умолчанию), так и передаваемые пользователем.
-        inf_override — передает пользовательское значение предпологаемой инфляции на период(не включает текущий).
-            Текущий период(год) берется через SOAP у ЦБ.(имеет дефолтное значение от ЦБ)
-        deposit_rate — переопределение ставки депозита(по аналогии с inf_override)
-        deposit_decrement — переопределение коэффициента снижения ставки
+    Функция запускает всю модель
+        Параметры:
+            const (dict): словарь заначение, основных показателей модели.
+            inf_override (list[float]):передает пользовательское значение предпологаемой инфляции на период(не включает текущий).
+            deposit_rate (float): переопределение ставки депозита(по аналогии с inf_override)
+            deposit_decrement (float): переопределение коэффициента снижения ставки
     """
     if const is None:
     # Если const не передан, используем DEFAULT_CONST

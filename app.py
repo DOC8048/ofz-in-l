@@ -5,11 +5,13 @@ import function.cbr_inflation as cbr_inf
 # загружаем из модуля new_function
 from function.API_in_function import get_deposit_rates
 @st.cache_data(ttl=14400)
-def get_target_inflation():
+def get_target_inflation() -> float | None:
     """
-    Один раз запрос к API.
-    Если ошибка — возвращаем дефолт.
+    Функция получает значение целевой инфляции 
     Результат кэшируется на 4 часа.
+    
+    Возвращает:
+        float | None: значение целевой инфляции в процентах (float), или None при ошибке
     """
     try:
         value = cbr_inf.get_latest_target()
@@ -20,7 +22,13 @@ def get_target_inflation():
         return None
 
 @st.cache_data(ttl=14400)
-def get_target_deposit():
+def get_target_deposit() -> float | None:
+    """
+    Функция полует ставку по депозиту (по вкладам физ.лиц довостребования), 
+    также кэш на 4 часа
+    Возвращает:
+        float | None: значение ставки депозита в процентах (float), или None при ошибке
+    """
     try:
         dep =get_deposit_rates()
         if dep.empty or 'rate' not in dep.columns:
@@ -31,6 +39,9 @@ def get_target_deposit():
 
 @st.cache_data(ttl=14400)
 def get_current_inflation():
+    """
+    Функция получает последнее заначение текущей инфляции 
+    """
     try:
         value1 = cbr_inf.get_latest_inflation()
         if value1 is None:
