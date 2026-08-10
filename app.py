@@ -103,93 +103,95 @@ if st.session_state.get('reset', False):
 # В app.py после инициализации session_state
 st.sidebar.info(f"Фактическая инфляция (ЦБ): {current_inflation}%")
 st.sidebar.caption("Слайдер ниже — позволяет строить модель по сценарному предположению о будущей инфляции (ежегодно).")
-# Параметры для депозита и инфляции
-inf_forecast = st.sidebar.number_input(
-    "Прогноз инфляции на будущие годы, %",
-    value=st.session_state['inf_forecast'],  # целевой уровень из API
-    step=0.1,
-    format="%.1f",
-    key='inf_forecast'
-)
-st.sidebar.write(f"Введено: {inf_forecast:.1f}%")
+with st.sidebar.expander("Ставки", expanded=False):
+    # Параметры для депозита и инфляции
+    inf_forecast = st.number_input(
+        "Прогноз инфляции на будущие годы, %",
+        value=st.session_state["inf_forecast"],
+        step=0.1,
+        format="%.1f",
+        key="inf_forecast"
+    )
+    st.write(f"Введено: {inf_forecast:.1f}%")
 
-deposit_rate = st.sidebar.number_input(
-    "Текущая ставка депозита, %",
-    value=st.session_state['deposit_rate'],  # подставь значение по умолчанию из API
-    step=0.1,
-    format="%.2f",
-    key='deposit_rate'
-)
-st.sidebar.write(f"Введено: {deposit_rate:.2f}%")
+    deposit_rate = st.number_input(
+        "Текущая ставка депозита, %",
+        value=st.session_state["deposit_rate"],
+        step=0.1,
+        format="%.2f",
+        key="deposit_rate"
+    )
+    st.write(f"Введено: {deposit_rate:.2f}%")
 
-deposit_decrement = st.sidebar.number_input(
-    "Коэффициент снижения ставки, %",
-    value=st.session_state['deposit_decrement'],
-    step=0.1,
-    format="%.1f",
-    key='deposit_decrement'
-)
-st.sidebar.write(f"Введено: {deposit_decrement:.1f}%")
+    deposit_decrement = st.number_input(
+        "Коэффициент снижения ставки, %",
+        value=st.session_state["deposit_decrement"],
+        step=0.1,
+        format="%.1f",
+        key="deposit_decrement"
+    )
+    st.write(f"Введено: {deposit_decrement:.1f}%")
 
-# Виджеты с привязкой к session_state
-attracted = st.sidebar.number_input(
-    "Привлекаемые средства, руб",
-    value=st.session_state.attracted,
-    step=10_000_000_000,
-    key='attracted'
-)
-st.sidebar.write(f"Введено: {attracted:,.0f}".replace(",", " "))
+with st.sidebar.expander('Основные характеристики', expanded=False):
+    # Виджеты с привязкой к словарю
+    attracted = st.number_input(
+        "Привлекаемые средства, руб",
+        value=st.session_state.attracted,
+        step=10_000_000_000,
+        key='attracted'
+    )
+    st.write(f"Введено: {attracted:,.0f}".replace(",", " "))
 
-people = st.sidebar.number_input(
-    "Количество человек, чел",
-    value=st.session_state.people,
-    step=100_000,
-    key='people'
-)
-st.sidebar.write(f"Введено: {people:,.0f}".replace(",", " "))
+    people = st.number_input(
+        "Количество человек, чел",
+        value=st.session_state.people,
+        step=100_000,
+        key='people'
+    )
+    st.write(f"Введено: {people:,.0f}".replace(",", " "))
 
-coupon_oin = st.sidebar.number_input(
-    "Ставка купона ОФЗ-ИН (л),%", 
-    value=st.session_state.coupon_oin, 
-    step=0.1, 
-    format="%.1f",
-    key='coupon_oin'
-)
-st.sidebar.write(f"Введено: {coupon_oin:.1f}")
+    coupon_oin = st.number_input(
+        "Ставка купона ОФЗ-ИН (л),%", 
+        value=st.session_state.coupon_oin, 
+        step=0.1, 
+        format="%.1f",
+        key='coupon_oin'
+    )
+    st.write(f"Введено: {coupon_oin:.1f}")
 
-coupon_pd = st.sidebar.number_input(
-    "Ставка купона ОФЗ-ПД,%", 
-    value=st.session_state.coupon_pd, 
-    step=0.1, 
-    format="%.2f",
-    key='coupon_pd'
-)
-st.sidebar.write(f"Введено: {coupon_pd:.2f}")
+    coupon_pd = st.number_input(
+        "Ставка купона ОФЗ-ПД,%", 
+        value=st.session_state.coupon_pd, 
+        step=0.1, 
+        format="%.2f",
+        key='coupon_pd'
+    )
+    st.write(f"Введено: {coupon_pd:.2f}")
 
-nominal_oin = st.sidebar.number_input(
-    "Номинал ОФЗ-ИН, руб", 
-    value=st.session_state.nominal_oin, 
-    step=1_000,
-    key='nominal_oin'
-)
-st.sidebar.write(f"Введено: {nominal_oin:,.0f}".replace(",", " "))
+    nominal_oin = st.number_input(
+        "Номинал ОФЗ-ИН, руб", 
+        value=st.session_state.nominal_oin, 
+        step=1_000,
+        key='nominal_oin'
+    )
+    st.write(f"Введено: {nominal_oin:,.0f}".replace(",", " "))
 
-nominal_pd = st.sidebar.number_input(
-    "Номинал ОФЗ-ПД, руб", 
-    value=st.session_state.nominal_pd, 
-    step=100,
-    key='nominal_pd'
-)
-st.sidebar.write(f"Введено: {nominal_pd:,.0f}".replace(",", " "))
+    nominal_pd = st.number_input(
+        "Номинал ОФЗ-ПД, руб", 
+        value=st.session_state.nominal_pd, 
+        step=100,
+        key='nominal_pd'
+    )
+    st.write(f"Введено: {nominal_pd:,.0f}".replace(",", " "))
 
-ndfl = st.sidebar.number_input(
-    "НДФЛ, %",
-    value=st.session_state.ndfl,
-    step=0.1,
-    format="%.1f",
-    key='ndfl'
-)
-st.sidebar.write(f"Введено: {ndfl:.1f}")
+    ndfl = st.number_input(
+        "НДФЛ, %",
+        value=st.session_state.ndfl,
+        step=0.1,
+        format="%.1f",
+        key='ndfl'
+    )
+    st.write(f"Введено: {ndfl:.1f}")
 
 # Кнопка сброса
 if st.sidebar.button("Сбросить все"):
