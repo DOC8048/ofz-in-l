@@ -3,17 +3,24 @@
 def get_deposit_rates():
     """
     Получает ставки по депозитам физических лиц, довостребования до 1 года
+    
+    Возвращает:
+        pd.DataFreme:
+            - date
+            - rate
+            - period_name
     """
     import requests
     import pandas as pd
-
+    from datetime import datetime
     BASE_URL = "http://www.cbr.ru/dataservice"
     PUBLICATION_ID = 18
     DATASET_ID = 37
+    end_date = datetime.now().strftime('%Y')
     params = {
         "publicationId": PUBLICATION_ID,
         "y1": 2020,
-        "y2": 2026,
+        "y2": end_date,
         "i_ids": [DATASET_ID],
         "m1_ids": [2], # разрез в рублях
         "m2_ids": [7]  # разрез до востребования 1 год
@@ -37,26 +44,33 @@ def get_deposit_rates():
     return df
 
 # Позволяет работать с API, но заранее нужно знать праметры: publication_id, dataset_id
-def get_cbr_data(publication_id, dataset_id, m1_ids=None, m2_ids=None, year_from=2020, year_to=2026):
+def get_cbr_data(
+        publication_id: int, 
+        dataset_id: int, 
+        m1_ids: list[int] | None=None, 
+        m2_ids: list[int] | None=None, 
+        year_from:int = 2020, 
+        year_to: int=None):
     """
-    Получает данные из API ЦБ (сервис /dataEx).
+    Получает данные из API ЦБ (сервис /dataEx).`
     
     Параметры:
         publication_id (int): ID публикации (категории)
         dataset_id (int): ID показателя
-        m1_ids (list, optional): ID первого разреза (например, валюта). По умолчанию None.
-        m2_ids (list, optional): ID второго разреза (например, срок). По умолчанию None.
-        year_from (int): начальный год
-        year_to (int): конечный год
+        m1_ids (list[int]): ID первого разреза (например, валюта). По умолчанию None.
+        m2_ids (list[int]): ID второго разреза (например, срок). По умолчанию None.
+        year_from (int): начальный год. По умолчанию 2020
+        year_to (int): текущий год
     
     Возвращает:
         pandas.DataFrame с колонками: date, rate, currency_id, term_id, period_name
     """
     import requests
     import pandas as pd
-
+    from datetime import datetime
     BASE_URL = "http://www.cbr.ru/dataservice"
-    
+    if year_to is None:
+            year_to = datetime.now().strftime('%Y')
     params = {
         "publicationId": publication_id,
         "y1": year_from,
