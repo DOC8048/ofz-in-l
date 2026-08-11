@@ -5,8 +5,8 @@ from datetime import datetime
 
 def get_inflation(start_date='2013-01-01', end_date=None):
     """
-    Получает данные по инфляции (индекс потребительских цен) с сайта ЦБ РФ.
-    Возвращает pandas Series с индексом из дат и значениями инфляции (в процентах).
+    Получает данные по инфляции (индекс потребительских цен) с сайта ЦБ РФ через SOAP.
+    Возвращает pandas DataFreme из дат и значениями инфляции (в процентах).
     """
     if end_date is None:
         end_date = datetime.now().strftime('%Y-%m-%d')
@@ -74,9 +74,15 @@ def get_inflation(start_date='2013-01-01', end_date=None):
     return df
 
 def get_latest_inflation():
+    """
+    Получает последенее значение инфляции
+    """
     df = get_inflation()
     return df['inflation'].iloc[-1]
     
 def get_latest_target():
+    """
+    Получает последнее значение целевой инфляции
+    """
     df = get_inflation()
     return df['target'].iloc[-1]
