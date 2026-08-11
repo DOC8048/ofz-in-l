@@ -2,8 +2,10 @@ import streamlit as st
 import pandas as pd
 from model import run_model
 import function.cbr_inflation as cbr_inf
+from datetime import datetime
 # загружаем из модуля new_function
 from function.API_in_function import get_deposit_rates
+from utilits_app.export_utils import generate_excel
 @st.cache_data(ttl=14400)
 def get_target_inflation() -> float | None:
     """
@@ -132,7 +134,7 @@ with st.sidebar.expander("Ставки", expanded=False):
     )
     st.write(f"Введено: {deposit_decrement:.1f}%")
 
-with st.sidebar.expander('Основные характеристики', expanded=False):
+with st.sidebar.expander('Параметры модели', expanded=False):
     # Виджеты с привязкой к словарю
     attracted = st.number_input(
         "Привлекаемые средства, руб",
@@ -231,3 +233,36 @@ st.dataframe(itog_ofz_in_l_gos)
 
 st.subheader("Нагрузка на государство (ОФЗ-ПД)")
 st.dataframe(itog_ofz_pd_gos)
+
+with st.popover("📥 Скачать выбранное"):
+    # Создаем переменные состояния для чекбоксов
+    include_income = st.checkbox("Итоговый доход по инструментам", value=True)
+    include_burden_oin = st.checkbox("Нагрузка ОФЗ-ИН", value=True)
+    include_burden_pd = st.checkbox("Нагрузка ОФЗ-ПД", value=True)
+    include_params = st.checkbox("Параметры модели", value=True)
+    include_user_params = st.checkbox("Ставки", value=True)
+    
+    st.divider()
+    
+    # Логика отображения кнопки
+    if not any([include_income, include_burden_oin, include_burden_pd, include_params, include_user_params]):
+        st.warning("Выберите хотя бы один раздел для экспорта.")
+    else:
+        st.download_button(
+            label="💾 Скачать отчёт",
+            data=lambda: generate_excel(
+                doxod_za_period,
+                itog_ofz_in_l_gos,
+                itog_ofz_pd_gos,
+                const,
+                user_params,
+                include_income,
+                include_burden_oin,
+                include_burden_pd,
+                include_params,
+                include_user_params
+            ),
+            file_name=f"model_report_{datetime.now().strftime('%Y-%m-%d')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
