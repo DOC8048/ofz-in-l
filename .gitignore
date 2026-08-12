@@ -1,0 +1,45 @@
+# Вся нечесть от  Jupyter Notebook
+*-checkpoint.ipynb
+.virtual_documents/
+# Чекпоинты Python
+*-checkpoint.py
+# Кэш и байт‑код Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Настройки VS Code (если не хотите коммитить их в репозиторий)
+.vscode/
+
+# Excel и другие промежуточные данные
+*.xlsx
+*.xls
+
+# Локальные конфиги и секреты
+.env
+.venv/
+venv/
+ENV/
+env/
+# Мешающие файлы
+poligon.ipynb
+for.py
+test.py
+SOAP cbr.ipynb
