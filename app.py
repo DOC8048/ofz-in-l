@@ -7,6 +7,7 @@ from datetime import datetime
 from function.API_in_function import get_deposit_rates
 from utilits_app.export_utils import generate_excel
 import requests
+# ======= Отладочный год ======
 try:
     response = requests.get("https://cbr.ru/secinfo/secinfo.asmx", timeout=5)
     response = requests.get("http://www.cbr.ru/dataservice", timeout=5)
@@ -15,7 +16,7 @@ try:
 except:
     st.write("Сайт ЦБ недоступен")
     st.write('API ЦБ недоступен')
-@st.cache_data(ttl=14400)
+# @st.cache_data(ttl=14400)
 def get_target_inflation() -> float | None:
     """
     Функция получает значение целевой инфляции 
@@ -32,7 +33,7 @@ def get_target_inflation() -> float | None:
     except Exception:
         return None
 
-@st.cache_data(ttl=14400)
+# @st.cache_data(ttl=14400)
 def get_target_deposit() -> float | None:
     """
     Функция полует ставку по депозиту (по вкладам физ.лиц довостребования), 
@@ -48,7 +49,7 @@ def get_target_deposit() -> float | None:
     except Exception:
         return None
 
-@st.cache_data(ttl=14400)
+# @st.cache_data(ttl=14400)
 def get_current_inflation():
     """
     Функция получает последнее заначение текущей инфляции 
