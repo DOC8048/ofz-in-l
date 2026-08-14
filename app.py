@@ -9,9 +9,12 @@ from utilits_app.export_utils import generate_excel
 import requests
 try:
     response = requests.get("https://cbr.ru/secinfo/secinfo.asmx", timeout=5)
+    response = requests.get("http://www.cbr.ru/dataservice", timeout=5)
     st.write("Сайт ЦБ доступен")
+    st.write('API ЦБ Доступен')
 except:
     st.write("Сайт ЦБ недоступен")
+    st.write('API ЦБ недоступен')
 @st.cache_data(ttl=14400)
 def get_target_inflation() -> float | None:
     """
