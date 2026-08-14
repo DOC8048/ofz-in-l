@@ -17,37 +17,69 @@ except:
     st.write("Сайт ЦБ недоступен")
     st.write('API ЦБ недоступен')
 # @st.cache_data(ttl=14400)
+# ==== Отладка фукций === 
+
 def get_target_inflation() -> float | None:
-    """
-    Функция получает значение целевой инфляции 
-    Результат кэшируется на 4 часа.
-    
-    Возвращает:
-        float | None: значение целевой инфляции в процентах (float), или None при ошибке
-    """
     try:
+        st.debug("get_target_inflation: пытаемся получить данные")
         value = cbr_inf.get_latest_target()
         if value is None:
+            st.warning("cbr_inf вернул None (нет данных)")
             return None
         return float(value)
-    except Exception:
+    except Exception as e:
+        # Теперь ты видишь точную ошибку в интерфейсе
+        st.error(f"get_target_inflation: ошибка: {e}")
         return None
+# def get_target_inflation() -> float | None:
+#     """
+#     Функция получает значение целевой инфляции 
+#     Результат кэшируется на 4 часа.
+    
+#     Возвращает:
+#         float | None: значение целевой инфляции в процентах (float), или None при ошибке
+#     """
+#     try:
+#         value = cbr_inf.get_latest_target()
+#         if value is None:
+#             return None
+#         return float(value)
+#     except Exception:
+#         return None
 
-# @st.cache_data(ttl=14400)
 def get_target_deposit() -> float | None:
-    """
-    Функция полует ставку по депозиту (по вкладам физ.лиц довостребования), 
-    также кэш на 4 часа
-    Возвращает:
-        float | None: значение ставки депозита в процентах (float), или None при ошибке
-    """
     try:
-        dep =get_deposit_rates()
-        if dep.empty or 'rate' not in dep.columns:
+        st.debug("get_target_deposit: пытаемся получить данные")
+        dep = get_deposit_rates()
+        if dep.empty:
+            st.warning("get_deposit_rates вернул пустой DataFrame")
             return None
-        return dep['rate'].iloc[-1]
-    except Exception:
+        if 'rate' not in dep.columns:
+            st.error("В DataFrame нет колонки 'rate'")
+            return None
+        rate = dep['rate'].iloc[-1]
+        if pd.isna(rate):
+            st.warning("Последнее значение ставки — NaN")
+            return None
+        return float(rate)
+    except Exception as e:
+        st.error(f"get_target_deposit: ошибка: {e}")
         return None
+#  @st.cache_data(ttl=14400)
+# def get_target_deposit() -> float | None:
+#     """
+#     Функция полует ставку по депозиту (по вкладам физ.лиц довостребования), 
+#     также кэш на 4 часа
+#     Возвращает:
+#         float | None: значение ставки депозита в процентах (float), или None при ошибке
+#     """
+#     try:
+#         dep =get_deposit_rates()
+#         if dep.empty or 'rate' not in dep.columns:
+#             return None
+#         return dep['rate'].iloc[-1]
+#     except Exception:
+#         return None
 
 # @st.cache_data(ttl=14400)
 def get_current_inflation():
