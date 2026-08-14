@@ -25,7 +25,8 @@ def get_deposit_rates():
         "m1_ids": [2], # разрез в рублях
         "m2_ids": [7]  # разрез до востребования 1 год
     }
-    response = requests.get(f"{BASE_URL}/dataEx", params=params)
+    response = requests.get(f"{BASE_URL}/dataEx", params=params,timeout=15)
+    print(repr(response.text[:200]))
     data = response.json()
     raw = data.get("RawData", [])
     df = pd.DataFrame(raw)
