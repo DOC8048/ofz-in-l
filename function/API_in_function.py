@@ -25,24 +25,74 @@ def get_deposit_rates():
         "m1_ids": [2], # разрез в рублях
         "m2_ids": [7]  # разрез до востребования 1 год
     }
-    response = requests.get(f"{BASE_URL}/dataEx", params=params,timeout=15)
-    print(repr(response.text[:200]))
-    data = response.json()
-    raw = data.get("RawData", [])
-    df = pd.DataFrame(raw)
-    df.rename(columns={
-        'period': 'period_name',
-        'date': 'date_str',
-        'value': 'rate',
-        'measure_1_id': 'currency_id',
-        'measure_2_id': 'term_id',
-        'period_id': 'period_id',
-        'rowId': 'row_id'
-    }, inplace=True)
-    df['date'] = pd.to_datetime(df['date_str'], format='%d.%m.%Y')
-    df = df.sort_values('date').reset_index(drop=True)
-    df = df[['date', 'rate', 'period_name']]
-    return df
+    try:
+         # 1. Делаем запрос
+            response = requests.get(f"{BASE_URL}/dataEx", params=params, timeout=15)
+            
+            # ВАЖНО: Проверяем статус код. Если 4xx/5xx, JSON там точно нет
+            if response.status_code != 200:
+                raw_preview = repr(response.text[:200])
+                print(f"⚠️ Статус {response.status_code}. Сырой ответ: {raw_preview}")
+                return pd.DataFrame()  # Возвращаем пустой DF, чтобы код не падал дальше
+
+            # 2. Теперь безопасно смотрим текст
+            raw_preview = repr(response.text[:200])
+            print(f"✅ Запрос успешен. Первые 200 символов: {raw_preview}")
+            
+            # 3. Только теперь пробуем JSON
+            data = response.json()
+            raw = data.get("RawData", [])
+            df = pd.DataFrame(raw)
+            df.rename(columns={
+                'period': 'period_name',
+                'date': 'date_str',
+                'value': 'rate',
+                'measure_1_id': 'currency_id',
+                'measure_2_id': 'term_id',
+                'period_id': 'period_id',
+                'rowId': 'row_id'
+            }, inplace=True)
+
+            df['date'] = pd.to_datetime(df['date_str'], format='%d.%m.%Y')
+            df = df.sort_values('date').reset_index(drop=True)
+            df = df[['date', 'rate', 'period_name']]
+            return df
+
+    except requests.exceptions.Timeout:
+            print("❌ Ошибка: Таймаут запроса к ЦБ")
+            return pd.DataFrame()
+            
+    except requests.exceptions.RequestException as e:
+            # Сюда попадёт ConnectionError, InvalidURL и т.д.
+            print(f"❌ Ошибка соединения: {e}")
+            return pd.DataFrame()
+            
+    except ValueError as e:  # Сюда попадёт JSONDecodeError
+            # Если мы здесь, значит запрос прошёл, но JSON битый
+            raw_preview = repr(response.text[:200])
+            print(f"❌ JSON невалиден. Сырой ответ: {raw_preview}")
+            return pd.DataFrame()
+
+    # ===== Вернуть код после выявеления ошибки ====
+    # response = requests.get(f"{BASE_URL}/dataEx", params=params,timeout=15)
+    # data = response.json()
+    # raw = data.get("RawData", [])
+    
+    # df = pd.DataFrame(raw)
+    # df.rename(columns={
+    #     'period': 'period_name',
+    #     'date': 'date_str',
+    #     'value': 'rate',
+    #     'measure_1_id': 'currency_id',
+    #     'measure_2_id': 'term_id',
+    #     'period_id': 'period_id',
+    #     'rowId': 'row_id'
+    #     }, inplace=True)
+    
+    # df['date'] = pd.to_datetime(df['date_str'], format='%d.%m.%Y')
+    # df = df.sort_values('date').reset_index(drop=True)
+    # df = df[['date', 'rate', 'period_name']]
+    # return df
 
 # Позволяет работать с API, но заранее нужно знать праметры: publication_id, dataset_id
 def get_cbr_data(
