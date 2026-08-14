@@ -21,7 +21,7 @@ except:
 
 def get_target_inflation() -> float | None:
     try:
-        st.debug("get_target_inflation: пытаемся получить данные")
+        print("get_target_inflation: функция вызвана (лог в терминале)")
         value = cbr_inf.get_latest_target()
         if value is None:
             st.warning("cbr_inf вернул None (нет данных)")
@@ -49,7 +49,7 @@ def get_target_inflation() -> float | None:
 
 def get_target_deposit() -> float | None:
     try:
-        st.debug("get_target_deposit: пытаемся получить данные")
+        print("get_target_deposit: функция вызвана")
         dep = get_deposit_rates()
         if dep.empty:
             st.warning("get_deposit_rates вернул пустой DataFrame")
