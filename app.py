@@ -231,6 +231,11 @@ doxod_za_period, itog_ofz_pd_gos, itog_ofz_in_l_gos = run_model(
     deposit_rate=user_params['deposit_rate'],
     deposit_decrement=user_params['deposit_decrement'],
 )
+# Приводим колонку 'Год' к строке, чтобы избежать ошибки Arrow
+# doxod_za_period['Год'] = doxod_za_period['Год'].astype(str)
+itog_ofz_in_l_gos['Год'] = itog_ofz_in_l_gos['Год'].astype(str)
+itog_ofz_pd_gos['Год'] = itog_ofz_pd_gos['Год'].astype(str)
+
 st.subheader("Итоговый доход по инструментам")
 st.dataframe(doxod_za_period)
 
