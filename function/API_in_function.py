@@ -25,21 +25,19 @@ def get_deposit_rates():
         "m1_ids": [2], # разрез в рублях
         "m2_ids": [7]  # разрез до востребования 1 год
     }
+    #  ====== Кусок для логов в streamlit ======
     try:
          # 1. Делаем запрос
             response = requests.get(f"{BASE_URL}/dataEx", params=params, timeout=15)
             
-            # ВАЖНО: Проверяем статус код. Если 4xx/5xx, JSON там точно нет
             if response.status_code != 200:
                 raw_preview = repr(response.text[:200])
                 print(f"⚠️ Статус {response.status_code}. Сырой ответ: {raw_preview}")
-                return pd.DataFrame()  # Возвращаем пустой DF, чтобы код не падал дальше
+                return pd.DataFrame()
 
-            # 2. Теперь безопасно смотрим текст
             raw_preview = repr(response.text[:200])
             print(f"✅ Запрос успешен. Первые 200 символов: {raw_preview}")
             
-            # 3. Только теперь пробуем JSON
             data = response.json()
             raw = data.get("RawData", [])
             df = pd.DataFrame(raw)
@@ -68,7 +66,7 @@ def get_deposit_rates():
             return pd.DataFrame()
             
     except ValueError as e:  # Сюда попадёт JSONDecodeError
-            # Если мы здесь, значит запрос прошёл, но JSON битый
+            # Если здесь, значит запрос прошёл, но JSON битый
             raw_preview = repr(response.text[:200])
             print(f"❌ JSON невалиден. Сырой ответ: {raw_preview}")
             return pd.DataFrame()
