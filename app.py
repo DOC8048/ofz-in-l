@@ -13,7 +13,19 @@ from utilits_app.export_utils import generate_excel
 #     st.write("Сайт ЦБ доступен")
 # except:
 #     st.write("Сайт ЦБ недоступен")
-@st.cache_data(ttl=14400)
+
+# ======= Отладочный год ======
+# import requests
+# try:
+#     response = requests.get("https://cbr.ru/secinfo/secinfo.asmx", timeout=5)
+#     response = requests.get("http://www.cbr.ru/dataservice", timeout=5)
+#     st.write("Сайт ЦБ доступен")
+#     st.write('API ЦБ Доступен')
+# except:
+#     st.write("Сайт ЦБ недоступен")
+#     st.write('API ЦБ недоступен')
+
+@st.cache_data(ttl=600)
 def get_target_inflation() -> float | None:
     """
     Функция получает значение целевой инфляции 
@@ -29,8 +41,27 @@ def get_target_inflation() -> float | None:
         return float(value)
     except Exception:
         return None
-
 @st.cache_data(ttl=14400)
+# ====== Оставлен для отладки =====
+# def get_target_deposit() -> float | None:
+#     try:
+#         print("get_target_deposit: функция вызвана")
+#         dep = get_deposit_rates()
+#         if dep.empty:
+#             st.warning("get_deposit_rates вернул пустой DataFrame")
+#             return None
+#         if 'rate' not in dep.columns:
+#             st.error("В DataFrame нет колонки 'rate'")
+#             return None
+#         rate = dep['rate'].iloc[-1]
+#         if pd.isna(rate):
+#             st.warning("Последнее значение ставки — NaN")
+#             return None
+#         return float(rate)
+#     except Exception as e:
+#         st.error(f"get_target_deposit: ошибка: {e}")
+#         return None
+@st.cache_data(ttl=600)
 def get_target_deposit() -> float | None:
     """
     Функция полует ставку по депозиту (по вкладам физ.лиц довостребования), 
@@ -46,7 +77,7 @@ def get_target_deposit() -> float | None:
     except Exception:
         return None
 
-@st.cache_data(ttl=14400)
+@st.cache_data(ttl=600)
 def get_current_inflation():
     """
     Функция получает последнее заначение текущей инфляции 
@@ -70,7 +101,7 @@ if target_inf is None or target_dep is None or current_inflation is None:
     st.error("⚠️ Серверы ЦБ или внешние API временно недоступны. Без этих данных расчёт модели невозможен.")
     
     # Подсказка, сколько ждать до следующей попытки
-    st.info("Кэш обновится автоматически через ~4 часа. Либо попробуйте перезагрузить страницу позже.")
+    st.info("Попробуйте перезагрузить страницу.")
     
     # Важно: дальше код не выполняется, модель не запускается
     st.stop()
