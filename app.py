@@ -240,7 +240,7 @@ if st.sidebar.button("Сбросить все"):
 
 # Словарь пользовательских параметров
 user_params = {
-    'inf_override': [inf_forecast / 100, inf_forecast / 100],  # для двух прогнозных лет
+    'inf_override': [inf_forecast, inf_forecast],  # для двух прогнозных лет
     'deposit_rate': deposit_rate / 100,  # переводим в десятичную дробь
     'deposit_decrement': deposit_decrement,
     
