@@ -6,8 +6,8 @@ from datetime import datetime
 # загружаем из модуля new_function
 from function.API_in_function import get_deposit_rates
 from utilits_app.export_utils import generate_excel
-import requests
 # ======= Отладочный год ======
+import requests
 try:
     response = requests.get("https://cbr.ru/secinfo/secinfo.asmx", timeout=5)
     response = requests.get("http://www.cbr.ru/dataservice", timeout=5)
@@ -244,7 +244,7 @@ if st.sidebar.button("Сбросить все"):
 
 # Словарь пользовательских параметров
 user_params = {
-    'inf_override': [inf_forecast / 100, inf_forecast / 100],  # для двух прогнозных лет
+    'inf_override': [inf_forecast, inf_forecast],  # для двух прогнозных лет
     'deposit_rate': deposit_rate / 100,  # переводим в десятичную дробь
     'deposit_decrement': deposit_decrement,
     
