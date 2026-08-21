@@ -34,7 +34,7 @@ def prepare_inflation_and_rate(
         inf_override: list[float] | None=None,  # список/массив значений инфляции на прогнозные годы)
         deposit_rate: float | None=None,
         deposit_decrement: float | None=None
-    ):
+    ) -> pd.DataFrame:
     """
     Формирует таблицу `inf_res` с прогнозом инфляции и ставкой депозита.
     Если параметры не переданы, использует данные из API ЦБ
@@ -90,7 +90,7 @@ def prepare_inflation_and_rate(
     else:
         dec = deposit_decrement
     base = value
-    inf_res['Ставка депозита'] = base - (dec/100) * inf_res.index
+    inf_res['Ставка депозита'] = base - dec * inf_res.index
     inf_res[['Инфляция','Ставка депозита']] = inf_res[['Инфляция','Ставка депозита']]/100 # переводим проценты в числа
     return inf_res
 
