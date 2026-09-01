@@ -46,10 +46,14 @@ class ModelConfig:
 
 
 # %%
+from datetime import date
+
 import pandas as pd
+from pandas import DataFrame
+
 import function.cbr_inflation as cbr_inf
 from function.API_in_function import get_deposit_rates
-from datetime import date
+
 
 class InflationRatePreparer:
     """
@@ -86,7 +90,7 @@ class InflationRatePreparer:
         inf_d = inf_d[['Год', 'Инфляция']].tail(1)
 
         # 2. Прогнозные годы
-        current_year = date.today().year
+        current_year = date.today().year  # noqa: DTZ011
         self.forecast_years = [current_year + 1, current_year + 2]
 
         # 3. Определяем значения инфляции для прогнозных лет
@@ -244,8 +248,8 @@ class DEPOZIT:
         depozit['Количество человек'] = self.config.people_count 
         depozit['На руках у человека'] = self.hand_people
         depozit ['Ставка депозита'] = self.dep_rate
-        depozit ['Коэфициент'] = (1 + self.dep_rate / 12) **12
-        depozit ['Накопленный множитель'] = depozit ['Коэфициент'].cumprod()
+        depozit ['Коэффициент'] = (1 + self.dep_rate / 12) **12
+        depozit ['Накопленный множитель'] = depozit ['Коэффициент'].cumprod()
         initial_amount = self.hand_people
         depozit ['Сумма на конец года'] = initial_amount * depozit ['Накопленный множитель']
         depozit ['Сумма на начало года'] = initial_amount
@@ -256,7 +260,7 @@ class DEPOZIT:
                            "Количество человек", 
                            "На руках у человека",
                            "Ставка депозита",
-                           "Коэфициент",
+                           "Коэффициент",
                            "Накопленный множитель",
                            "Сумма на начало года",
                            "Сумма на конец года",
@@ -339,7 +343,7 @@ def build_summary_table(
 def build_government_ofz_in(
         config: dict, 
         inf_res: pd.DataFrame
-        ) -> DataFrame:
+        ) -> pd.DataFrame:
     """
     Параметры:
         const (dict): словарь с константами
@@ -372,7 +376,7 @@ def build_government_ofz_in(
 def build_government_ofz_pd(
             config: dict,
             ofz_pd: pd.DataFrame, 
-            inf_res: pd.DataFrame) -> DataFrame:
+            inf_res: pd.DataFrame) -> pd.DataFrame:
     """
     Рассчитывает нагрузку на государство по ОФЗ-ПД (купоны, возврат НДФЛ).
     Параметры:
@@ -405,7 +409,6 @@ def build_government_ofz_pd(
     return itog_ofz_pd_gos
 
 # %%
-from pandas import DataFrame
 class FinancialModel:
     def __init__(self, config: ModelConfig = None, preparer: InflationRatePreparer = None):
         # Если конфиг не передали, создаем по умолчанию
@@ -421,7 +424,7 @@ class FinancialModel:
         self.government_ofz_in_l = None
         self.preparer = preparer
         self.ofz_in = None
-        # self._inflat()
+        # self._inflate()
         self.run_all()
         # self.inflation = preparer.data
     
@@ -429,7 +432,7 @@ class FinancialModel:
     def inflation(self):
         return self.preparer.data
         
-    # def _inflat(self):
+    # def _inflate(self):
     #     cb_data = InflationRatePreparer()
     #     self.inflation = cb_data.data        
     
