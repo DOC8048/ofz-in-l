@@ -337,11 +337,11 @@ def build_summary_table(
     doxod_za_period['Очистка инфляции'] = doxod_za_period['Итоговая сумма']/inf_factor
     doxod_za_period['Реальный доход'] = doxod_za_period['Итоговая сумма'] - ofz_in_l['На руках у человека, руб']
     doxod_za_period.loc[doxod_za_period['Инструмент'] == 'ОФЗ ИН доход', 'Очистка инфляции'] = None
-    return doxod_za_period
+    return doxod_za_period # pyright: ignore[reportReturnType]
 
 # %%
 def build_government_ofz_in(
-        config: dict, 
+        config: ModelConfig, 
         inf_res: pd.DataFrame
         ) -> pd.DataFrame:
     """
@@ -374,7 +374,7 @@ def build_government_ofz_in(
 
 # %%
 def build_government_ofz_pd(
-            config: dict,
+            config: ModelConfig,
             ofz_pd: pd.DataFrame, 
             inf_res: pd.DataFrame) -> pd.DataFrame:
     """
@@ -410,7 +410,7 @@ def build_government_ofz_pd(
 
 # %%
 class FinancialModel:
-    def __init__(self, config: ModelConfig = None, preparer: InflationRatePreparer = None):
+    def __init__(self, config: ModelConfig | None = None, preparer: InflationRatePreparer | None = None):
         # Если конфиг не передали, создаем по умолчанию
         if config is None:
             config = ModelConfig()
@@ -437,6 +437,8 @@ class FinancialModel:
     #     self.inflation = cb_data.data        
     
     def run_all(self) -> tuple[DataFrame, DataFrame, DataFrame]:
+        if self.inflation is None:
+            raise ValueError("Данные инфляции не загружены — расчёт невозможен")
         self.ofz_in = OFZ_IN_L(config=self.config, inf_res=self.inflation)
         ofz_pd = OFZ_PD(config=self.config,inf_res=self.inflation,hand_column=self.ofz_in.get_hand_amount())
         dep = DEPOZIT(config=self.config,inf_res=self.inflation,hand_column=self.ofz_in.get_hand_amount())
