@@ -1,0 +1,17 @@
+name: model
+channels:
+  - defaults
+dependencies:
+  - python=3.13
+  - plotly
+  - jupyterlab
+  - pandas
+  - openpyxl
+  - notebook
+  - jupyterlab_launcher
+  - jupyterlab-git
+  - lxml
+  - git
+  - anaconda_prompt
+  - pandas-stubs
+prefix: C:\Users\nikit\anaconda3\envs\model
