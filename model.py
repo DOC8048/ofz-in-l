@@ -2,12 +2,15 @@
 # # 1. Импорт библиотек и настройки
 
 # %%
+from datetime import date
+
 import pandas as pd
-# загружаем функии из модуля cbr_inflation
+
+# загружаем функции из модуля cbr_inflation
 import function.cbr_inflation as cbr_inf
+
 # загружаем из модуля new_function
 from function.API_in_function import get_deposit_rates
-from datetime import date
 
 # %% [markdown]
 # # 2. Загрузка констант и динамики
@@ -28,7 +31,7 @@ def get_constants():
 DEFAULT_CONST = get_constants()
 
 # %%
-# загружаем функии из модуля cbr_inflation
+# загружаем функции из модуля cbr_inflation
 
 def prepare_inflation_and_rate(
         inf_override: list[float] | None=None,  # список/массив значений инфляции на прогнозные годы)
@@ -40,9 +43,9 @@ def prepare_inflation_and_rate(
     Если параметры не переданы, использует данные из API ЦБ
     
     Параметры:
-        inf_override (list[float]) | None=None: список значений инфляции для прогнозных лет (в долях) от пользоватлея или по умолчанию целевая из API ЦБ
+        inf_override (list[float]) | None=None: список значений инфляции для прогнозных лет (в долях) от пользователя или по умолчанию целевая из API ЦБ
         deposit_rate (float) | None=None: текущая ставка депозита (в долях), аналогично с inf_override
-        deposit_decrement (float) | None=None: ежегодное снижение ставки (в процентах, по умолчанию 2.5), также возможно изменнение пользователем
+        deposit_decrement (float) | None=None: ежегодное снижение ставки (в процентах, по умолчанию 2.5), также возможно изменение пользователем
     
     Возвращает:
         pd.DataFrame: таблица с колонками 'Год', 'Инфляция', 'Ставка депозита' (в долях).
@@ -57,8 +60,8 @@ def prepare_inflation_and_rate(
     'target': 'Цель по инфляции'},inplace=True)
     inf_d = inf_d[['Год','Инфляция']]
     inf_d = inf_d.tail(1)
-    # автоматизируем продлжения ряда лет,и настраиваем вывод целовой инфляции
-    current_year = date.today().year
+    # автоматизируем продолжения ряда лет,и настраиваем вывод целевой инфляции
+    current_year = date.today().year  # noqa: DTZ011
     forecast_years = [current_year + 1, current_year + 2]
     # Если пользователь передал свой прогноз инфляции, используем его
     if inf_override is not None:
@@ -73,7 +76,7 @@ def prepare_inflation_and_rate(
     inf_res = pd.concat([inf_d,inf2],ignore_index=True)
 
 # %%
-    # Cтавка депозита 
+    # Ставка депозита 
     if deposit_rate is None:
     # берем из API
         df = get_deposit_rates()
@@ -225,9 +228,9 @@ def calculate_depozit(
 
 
 # %%
-    depozit ['Коэфициент'] = (1 + inf_res['Ставка депозита'] / 12) **12
+    depozit ['коэффициент'] = (1 + inf_res['Ставка депозита'] / 12) **12
 # %%
-    depozit ['Накопленный множитель'] = depozit ['Коэфициент'].cumprod()
+    depozit ['Накопленный множитель'] = depozit ['коэффициент'].cumprod()
 
 # %%
     initial_amount = depozit['На руках у человека'].iloc[0]
@@ -248,7 +251,7 @@ def calculate_depozit(
                    "Количество человек", 
                    "На руках у человека",
                    "Ставка депозита",
-                   "Коэфициент",
+                   "коэффициент",
                    "Накопленный множитель",
                    "Сумма на начало года",
                    "Сумма на конец года",
@@ -333,7 +336,7 @@ def build_summary_table(
     doxod_za_period['Очистка инфляции'] = doxod_za_period['Итоговая сумма']/inf_factor
     doxod_za_period['Реальный доход'] = doxod_za_period['Итоговая сумма'] - ofz_in_l['На руках у человека, руб']
     doxod_za_period.loc[doxod_za_period['Инструмент'] == 'ОФЗ ИН доход', 'Очистка инфляции'] = None
-    return doxod_za_period
+    return doxod_za_period   # pyright: ignore[reportReturnType]
 
 
 # %% [markdown]
@@ -420,8 +423,8 @@ def run_model(
     """
     Функция запускает всю модель
         Параметры:
-            const (dict): словарь заначение, основных показателей модели.
-            inf_override (list[float]):передает пользовательское значение предпологаемой инфляции на период(не включает текущий).
+            const (dict): словарь значений, основных показателей модели.
+            inf_override (list[float]):передает пользовательское значение предполагаемой инфляции на период(не включает текущий).
             deposit_rate (float): переопределение ставки депозита(по аналогии с inf_override)
             deposit_decrement (float): переопределение коэффициента снижения ставки
     """
