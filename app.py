@@ -1,11 +1,14 @@
-import streamlit as st
-import pandas as pd
-from model import run_model
-import function.cbr_inflation as cbr_inf
 from datetime import datetime
+
+import streamlit as st
+
+import function.cbr_inflation as cbr_inf
+
 # загружаем из модуля new_function
 from function.API_in_function import get_deposit_rates
+from model import run_model
 from utilits_app.export_utils import generate_excel
+
 # ======= Отладочный код =======
 # import requests
 # try:
@@ -39,7 +42,7 @@ def get_target_inflation() -> float | None:
         if value is None:
             return None
         return float(value)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return None
 @st.cache_data(ttl=14400)
 # ====== Оставлен для отладки =====
@@ -74,7 +77,7 @@ def get_target_deposit() -> float | None:
         if dep.empty or 'rate' not in dep.columns:
             return None
         return dep['rate'].iloc[-1]
-    except Exception:
+    except Exception:  # noqa: BLE001
         return None
 
 @st.cache_data(ttl=600)
@@ -87,7 +90,7 @@ def get_current_inflation():
         if value1 is None:
             return None
         return float(value1)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return None
 target_inf = get_target_inflation()
 target_dep = get_target_deposit()
@@ -241,7 +244,7 @@ if st.sidebar.button("Сбросить все"):
 # Словарь пользовательских параметров
 user_params = {
     'inf_override': [inf_forecast, inf_forecast],  # для двух прогнозных лет
-    'deposit_rate': deposit_rate / 100,  # переводим в десятичную дробь
+    'deposit_rate': deposit_rate / 100,  # переводим в десятичную дробь # pyright: ignore[reportOptionalOperand]
     'deposit_decrement': deposit_decrement,
     
 }
@@ -249,11 +252,11 @@ user_params = {
 const = {
     'Привлекаемые_средства': attracted,
     'Количество_человек': people,
-    'Ставка_купона_ОФЗ_ИН_л': coupon_oin/100,
-    'Ставка_купона_ОФЗ_ПД': coupon_pd/100,
+    'Ставка_купона_ОФЗ_ИН_л': coupon_oin/100, # pyright: ignore[reportOptionalOperand]
+    'Ставка_купона_ОФЗ_ПД': coupon_pd/100, # pyright: ignore[reportOptionalOperand]
     'Номинал_ОФЗ_ИН': nominal_oin,
     'Номинал_ОФЗ_ПД': nominal_pd,
-    'НДФЛ': ndfl/100,
+    'НДФЛ': ndfl/100, # pyright: ignore[reportOptionalOperand]
 }
 
 # Запускаем модель с пользовательскими параметрами
@@ -300,7 +303,7 @@ with st.popover("📥 Скачать выбранное"):
                 include_params,
                 include_user_params
             ),
-            file_name=f"model_report_{datetime.now().strftime('%Y-%m-%d')}.xlsx",
+            file_name=f"model_report_{datetime.now().strftime('%Y-%m-%d')}.xlsx",  # noqa: DTZ005
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True
         )
