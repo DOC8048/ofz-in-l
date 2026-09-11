@@ -4,13 +4,14 @@
 # %%
 from datetime import date
 
+import numpy as np
 import pandas as pd
 
 # загружаем функции из модуля cbr_inflation
 import function.cbr_inflation as cbr_inf
 
 # загружаем из модуля new_function
-from function.API_in_function import get_deposit_rates
+from function.api_in_function import get_deposit_rates
 
 # %% [markdown]
 # # 2. Загрузка констант и динамики
@@ -334,8 +335,11 @@ def build_summary_table(
     inf_factor = (1 + inf_res['Инфляция']).prod()
 # %%
     doxod_za_period['Очистка инфляции'] = doxod_za_period['Итоговая сумма']/inf_factor
-    doxod_za_period['Реальный доход'] = doxod_za_period['Итоговая сумма'] - ofz_in_l['На руках у человека, руб']
-    doxod_za_period.loc[doxod_za_period['Инструмент'] == 'ОФЗ ИН доход', 'Очистка инфляции'] = None
+    doxod_za_period['Реальный доход'] = np.where(
+        doxod_za_period['Инструмент'] == 'ОФЗ ИН доход',
+        doxod_za_period['Итоговая сумма'] - df_s_merge['Вложения'],
+        doxod_za_period['Очистка инфляции'] - df_s_merge['Вложения'])
+    doxod_za_period.loc[doxod_za_period['Инструмент'] == 'ОФЗ ИН доход', 'Очистка инфляции'] = np.nan
     return doxod_za_period   # pyright: ignore[reportReturnType]
 
 
