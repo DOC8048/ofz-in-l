@@ -5,7 +5,7 @@ import streamlit as st
 import function.cbr_inflation as cbr_inf
 
 # загружаем из модуля new_function
-from function.API_in_function import get_deposit_rates
+from function.api_in_function import get_deposit_rates
 from model import run_model
 from utilits_app.export_utils import generate_excel
 
@@ -244,7 +244,7 @@ if st.sidebar.button("Сбросить все"):
 # Словарь пользовательских параметров
 user_params = {
     'inf_override': [inf_forecast, inf_forecast],  # для двух прогнозных лет
-    'deposit_rate': deposit_rate / 100,  # переводим в десятичную дробь # pyright: ignore[reportOptionalOperand]
+    'deposit_rate': deposit_rate,  # переводим в десятичную дробь # pyright: ignore[reportOptionalOperand]
     'deposit_decrement': deposit_decrement,
     
 }
@@ -303,7 +303,7 @@ with st.popover("📥 Скачать выбранное"):
                 include_params,
                 include_user_params
             ),
-            file_name=f"model_report_{datetime.now().strftime('%Y-%m-%d')}.xlsx",  # noqa: DTZ005
+            file_name=f"model_report_{datetime.now().strftime('%Y-%m-%d')}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True
         )
