@@ -1,22 +1,22 @@
-
-# Только ставки по депозитам физических лиц, довостребования до 1 года
+# Только ставки по депозитам физических лиц, до востребования до 1 года 
 def get_deposit_rates():
     """
-    Получает ставки по депозитам физических лиц, довостребования до 1 года
+    Получает ставки по депозитам физических лиц, до востребования до 1 года
     
     Возвращает:
-        pd.DataFreme:
+        pd.Dataframe:
             - date
             - rate
             - period_name
     """
-    import requests
-    import pandas as pd
     from datetime import datetime
+
+    import pandas as pd
+    import requests
     BASE_URL = "http://www.cbr.ru/dataservice"
     PUBLICATION_ID = 18
     DATASET_ID = 37
-    end_date = datetime.now().strftime('%Y')
+    end_date = datetime.now().strftime('%Y')  
     params = {
         "publicationId": PUBLICATION_ID,
         "y1": 2020,
@@ -66,13 +66,13 @@ def get_deposit_rates():
             print(f"❌ Ошибка соединения: {e}")
             return pd.DataFrame()
             
-    except ValueError as e:  # Сюда попадёт JSONDecodeError
+    except ValueError:  # Сюда попадёт JSONDecodeError
             # Если здесь, значит запрос прошёл, но JSON битый
-            raw_preview = repr(response.text[:200])
+            raw_preview = repr(response.text[:200]) # pyright: ignore[reportPossiblyUnboundVariable]
             print(f"❌ JSON невалиден. Сырой ответ: {raw_preview}")
             return pd.DataFrame()
 
-    # ===== Вернуть код после выявеления ошибки ====
+    # ===== Вернуть код после выявления ошибки ====
     # response = requests.get(f"{BASE_URL}/dataEx", params=params,timeout=15)
     # data = response.json()
     # raw = data.get("RawData", [])
@@ -93,14 +93,14 @@ def get_deposit_rates():
     # df = df[['date', 'rate', 'period_name']]
     # return df
 
-# Позволяет работать с API, но заранее нужно знать праметры: publication_id, dataset_id
+# Позволяет работать с API, но заранее нужно знать параметры: publication_id, dataset_id
 def get_cbr_data(
         publication_id: int, 
         dataset_id: int, 
         m1_ids: list[int] | None=None, 
         m2_ids: list[int] | None=None, 
         year_from:int = 2020, 
-        year_to: int=None):
+        year_to: int | None=None):
     """
     Получает данные из API ЦБ (сервис /dataEx).`
     
@@ -115,12 +115,13 @@ def get_cbr_data(
     Возвращает:
         pandas.DataFrame с колонками: date, rate, currency_id, term_id, period_name
     """
-    import requests
-    import pandas as pd
     from datetime import datetime
+
+    import pandas as pd
+    import requests
     BASE_URL = "http://www.cbr.ru/dataservice"
     if year_to is None:
-            year_to = datetime.now().strftime('%Y')
+            year_to = datetime.now().year
     params = {
         "publicationId": publication_id,
         "y1": year_from,
