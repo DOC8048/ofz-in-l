@@ -1,4 +1,3 @@
-
 import panel as pn
 
 import function.cbr_inflation as cbr_inf
@@ -10,45 +9,64 @@ pn.extension(design='material')  # важно для работы виджето
 # ============================================
 # 1. Логика и данные (отдельно от интерфейса)
 # ============================================
-def get_defaults():
     # твои функции получения инфляции и ставки
-    target_inf = cbr_inf.get_latest_target()
-    target_dep = get_deposit_rates()
-    target_dep = target_dep['rate'].iloc[-1]
-    return {
-        'attracted': 380_000_000_000,
-        'people': 2_000_000,
-        'coupon_oin': 2.5,
-        'coupon_pd': 13.74,
-        'nominal_oin': 10000,
-        'nominal_pd': 1000,
-        'ndfl': 13.0,
-        'inf_forecast': target_inf,
-        'deposit_rate': target_dep,
-        'deposit_decrement': 2.5
-    }
+target_inf = cbr_inf.get_latest_target()
+target_dep = get_deposit_rates()
+target_dep = target_dep['rate'].iloc[-1]
+deposit_decrement =  2.5
+defaults = md.ModelConfig()
+# return {
+#         'attracted': 380_000_000_000,
+#         'people': 2_000_000,
+#         'coupon_oin': 2.5,
+#         'coupon_pd': 13.74,
+#         'nominal_oin': 10000,
+#         'nominal_pd': 1000,
+#         'ndfl': 13.0,
+#         'inf_forecast': target_inf,
+#         'deposit_rate': target_dep,
+#         'deposit_decrement': 2.5
+#     }
 current_inflation = cbr_inf.get_latest_inflation()
-DEFAULTS = get_defaults()
+# DEFAULTS = get_defaults()
 
 # ============================================
 # 2. Создаём виджеты (они НЕ привязаны к session_state)
 # ============================================
-inf_widget = pn.widgets.NumberInput(
+number = pn.indicators.Number(
+    label='Фактическая инфляция (ЦБ)',
+    value=current_inflation,
+    format='{value}%',
+    font_size='20pt',
+    title_size='15pt'
+)
+
+boxed_number = pn.Card(
+    number,
+    hide_header = True,
+    styles={
+        'background': 'var(--design-surface-color)',
+        'border': '1px solid var(--panel-border-color)'
+    },
+    sizing_mode='stretch_width',
+    margin=(10, 0, 10, 0),
+)
+inf_widget = pn.widgets.FloatInput(
     name='Прогноз инфляции на будущие годы, %',
-    value=DEFAULTS['inf_forecast'],
+    value= target_inf,
     step=0.1,
     format="0.00"
 )
 
-deposit_widget = pn.widgets.NumberInput(
+deposit_widget = pn.widgets.FloatInput(
     name='Текущая ставка депозита, %',
-    value=DEFAULTS['deposit_rate'],
+    value=target_dep,
     step=0.1,
     format="0.00"
 )
 deposit_decrements_widget = pn.widgets.NumberInput(
     name='Коэффициент снижения ставки, %',
-    value= DEFAULTS['deposit_decrement'],
+    value= deposit_decrement,
     step=0.1,
     format='0.00'
 )
@@ -56,40 +74,40 @@ deposit_decrements_widget = pn.widgets.NumberInput(
 # и так для всех параметров (привлекаемые средства, купоны и т.д.)
 attracted_widget = pn.widgets.NumberInput(
     name='Привлекаемые средства, руб',
-    value=DEFAULTS['attracted'],
+    value=defaults.attract_funds,
     step=10_000_000_000,
 )
 people_widget = pn.widgets.NumberInput(
     name="Количество человек, чел",
-    value=DEFAULTS['people'],
+    value=defaults.people_count,
     step=100_000,
 )
-coupon_oin_widget = pn.widgets.NumberInput(
+coupon_oin_widget = pn.widgets.FloatInput(
     name="Ставка купона ОФЗ-ИН (л),%", 
-    value=DEFAULTS['coupon_oin'], 
+    value=defaults.coupon_ofz_in, 
     step=0.1, 
     format="0.00",
 )
-coupon_pd_widget = pn.widgets.NumberInput(
+coupon_pd_widget = pn.widgets.FloatInput(
     name= "Ставка купона ОФЗ-ПД,%", 
-    value=DEFAULTS['coupon_pd'], 
+    value=defaults.coupon_ofz_pd, 
     step=0.1, 
     format="0.00"
 )
 
 nominal_oin_widget = pn.widgets.NumberInput(
     name="Номинал ОФЗ-ИН, руб", 
-    value=DEFAULTS['nominal_oin'], 
+    value=defaults.face_ofz_in, 
     step=1_000,
 )
 nominal_pd_widget = pn.widgets.NumberInput(
     name="Номинал ОФЗ-ПД, руб", 
-    value=DEFAULTS['nominal_pd'], 
+    value=defaults.face_ofz_pd, 
     step=100,
 )
-ndfl_widget = pn.widgets.NumberInput(
+ndfl_widget = pn.widgets.FloatInput(
     name="НДФЛ, %",
-    value=DEFAULTS['ndfl'],
+    value=defaults.ndfl,
     step=0.1,
     format="0.00",
 )
@@ -116,12 +134,12 @@ def create_model(inf,dep,attracted,dep_dec,people,cp_oin,cp_pd,nm_oin,nm_pd,ndfl
     # 1. Собираем конфиг
     config = md.ModelConfig(
         attract_funds=attracted,
-        coupon_ofz_in=cp_oin/100,
-        coupon_ofz_pd=cp_pd/100,
+        coupon_ofz_in=cp_oin,
+        coupon_ofz_pd=cp_pd,
         face_ofz_in=nm_oin,
         face_ofz_pd=nm_pd,
         people_count=people,
-        ndfl=ndfl_/100
+        ndfl=ndfl_
     )
     # 2. Собираем препаратор
     preparer = md.InflationRatePreparer(
@@ -201,15 +219,15 @@ gov_pd_pane = pn.bind(
 # ============================================
 def reset_values(event):
     # Меняем значения виджетов, а не session_state
-    inf_widget.value = DEFAULTS['inf_forecast']
-    deposit_widget.value = DEFAULTS['deposit_rate']
-    attracted_widget.value = DEFAULTS['attracted']
-    people_widget.value = DEFAULTS['people']
-    coupon_oin_widget.value = DEFAULTS['coupon_oin']
-    coupon_pd_widget.value = DEFAULTS['coupon_pd']
-    nominal_oin_widget.value = DEFAULTS['nominal_oin']
-    nominal_pd_widget.value = DEFAULTS['nominal_pd']
-    ndfl_widget.value = DEFAULTS['ndfl']
+    inf_widget.value = target_inf
+    deposit_widget.value = target_dep 
+    attracted_widget.value = defaults.attract_funds
+    people_widget.value = defaults.people_count
+    coupon_oin_widget.value = defaults.coupon_ofz_in
+    coupon_pd_widget.value = defaults.coupon_ofz_pd
+    nominal_oin_widget.value = defaults.face_ofz_in
+    nominal_pd_widget.value = defaults.face_ofz_pd
+    ndfl_widget.value = defaults.ndfl
 
 reset_button.on_click(reset_values)
 
@@ -219,12 +237,7 @@ reset_button.on_click(reset_values)
 template = pn.template.FastListTemplate(
     title="Модель ОФЗ ИН (л)",
     sidebar=[
-        pn.panel(
-            f"📊 **Фактическая инфляция (ЦБ): {current_inflation}%**",
-            width_policy="fit",
-            margin=(10, 0, 10, 0),
-            css_classes=["rounded"],  # скруглённые углы
-        ),
+        boxed_number,
         pn.pane.Markdown('## Параметры модели'),
         inf_widget,
         deposit_widget,
@@ -244,13 +257,24 @@ assert template.main is not None
 template.main.append(
     pn.Column(
         pn.pane.Markdown('## Результаты'),
-        pn.Tabs(
-            ('Доходность', summary_pane),
-            ('Госдолг ОФЗ-ИН', gov_in_pane),
-            ('Госдолг ОФЗ-ПД', gov_pd_pane)
+        pn.Card(
+            summary_pane,
+            title='Доходность',
+            collapsed=True,
+            width=800,
         ),
-         width=800
-    )   
+        pn.Card(
+            gov_in_pane,
+            title='Госдолг ОФЗ-ИН',
+            collapsed=True,
+            width=800,
+        ),
+        pn.Card(
+            gov_pd_pane,
+            title='Госдолг ОФЗ-ПД',
+            collapsed=True,
+            width=800,
+        ),
+    )
 )
 template.servable()
-
