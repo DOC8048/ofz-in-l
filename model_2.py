@@ -3,12 +3,12 @@ class ModelConfig:
     def __init__(
         self, 
         attract_funds=380_000_000_000,
-        coupon_ofz_in=0.025,
-        coupon_ofz_pd=0.1374,
+        coupon_ofz_in=2.5,
+        coupon_ofz_pd=13.74,
         face_ofz_in=10000,
         face_ofz_pd=1000,
         people_count=2_000_000,
-        ndfl=0.13
+        ndfl=13
     ):
        
         self.attract_funds = attract_funds   # Теперь это не ключ, а свойство объекта
@@ -19,30 +19,40 @@ class ModelConfig:
         self.people_count = people_count
         self.ndfl = ndfl
 
-    def set_parameters(
-            self,
-            attract_funds= None,
-            coupon_ofz_in= None,
-            coupon_ofz_pd= None,
-            face_ofz_in= None,
-            face_ofz_pd= None,
-            people_count= None,
-            ndfl= None
-        ):
-            if attract_funds is not None:
-                self.attract_funds = attract_funds
-            if coupon_ofz_in is not None:
-                self.coupon_ofz_in = coupon_ofz_in
-            if coupon_ofz_pd is not None:
-                self.coupon_ofz_pd = coupon_ofz_pd
-            if face_ofz_in is not None:
-                self.face_ofz_in = face_ofz_in
-            if face_ofz_pd is not None:    
-                self.face_ofz_pd = face_ofz_pd
-            if people_count is not None:
-                self.people_count = people_count
-            if ndfl is not None:
-                self.ndfl = ndfl
+    @property
+    def coupon_ofz_oin_ratio(self) -> float:
+        return self.coupon_ofz_in / 100
+    @property
+    def coupon_ofz_pd_ratio(self) -> float:
+        return self.coupon_ofz_pd / 100
+    @property
+    def ndfl_ratio (self) -> float:
+        return self.ndfl / 100
+
+    # def set_parameters(
+    #         self,
+    #         attract_funds= None,
+    #         coupon_ofz_in= None,
+    #         coupon_ofz_pd= None,
+    #         face_ofz_in= None,
+    #         face_ofz_pd= None,
+    #         people_count= None,
+    #         ndfl= None
+    #     ):
+    #         if attract_funds is not None:
+    #             self.attract_funds = attract_funds
+    #         if coupon_ofz_in is not None:
+    #             self.coupon_ofz_in = coupon_ofz_in
+    #         if coupon_ofz_pd is not None:
+    #             self.coupon_ofz_pd = coupon_ofz_pd
+    #         if face_ofz_in is not None:
+    #             self.face_ofz_in = face_ofz_in
+    #         if face_ofz_pd is not None:    
+    #             self.face_ofz_pd = face_ofz_pd
+    #         if people_count is not None:
+    #             self.people_count = people_count
+    #         if ndfl is not None:
+    #             self.ndfl = ndfl
 
 
 # %%
@@ -180,7 +190,7 @@ class OFZ_IN_L:
         # Вместо const['...'] пишем self.config.attract_funds
         ofz_in_l['Привлекаемые средства'] = self.config.attract_funds
         ofz_in_l['Количество человек'] = self.config.people_count 
-        ofz_in_l['Ставка купона'] = self.config.coupon_ofz_in
+        ofz_in_l['Ставка купона'] = self.config.coupon_ofz_oin_ratio
         ofz_in_l['На руках у человека, руб'] = ofz_in_l['Привлекаемые средства'] / ofz_in_l['Количество человек']
         ofz_in_l['Облигаций штук'] = ofz_in_l['На руках у человека, руб'] / self.config.face_ofz_in  # Номинал можно вынести в конфиг
         ofz_in_l['Инфляционный множитель']= (1 + self.inf_data['Инфляция']).cumprod()
@@ -190,7 +200,7 @@ class OFZ_IN_L:
         ofz_in_l['Индексация номинала'] = ofz_in_l['Номинал на начало'] * ofz_in_l['Инфляция']
         ofz_in_l['Купон, руб'] = ofz_in_l['Номинал после индексации'] * ofz_in_l['Ставка купона']
         ofz_in_l['Доход без вычета'] = ofz_in_l['Купон, руб'] * ofz_in_l['Облигаций штук']
-        ofz_in_l ['Налоговый вычет, руб']= ofz_in_l['На руках у человека, руб'] * self.config.ndfl
+        ofz_in_l ['Налоговый вычет, руб']= ofz_in_l['На руках у человека, руб'] * self.config.ndfl_ratio
         ofz_in_l['Доход с вычетом'] = ofz_in_l['Налоговый вычет, руб'] + ofz_in_l['Доход без вычета']
         ofz_in_l = ofz_in_l[['Год', # перезаписываем в нужном порядке
          'Привлекаемые средства',
@@ -226,12 +236,12 @@ class OFZ_PD:
         ofz_pd['Год'] = self.year
         ofz_pd['Привлекаемые средства'] = self.config.attract_funds
         ofz_pd ["Количество человек"] = self.config.people_count
-        ofz_pd ["Ставка купона"] = self.config.coupon_ofz_pd
+        ofz_pd ["Ставка купона"] = self.config.coupon_ofz_pd_ratio
         ofz_pd ["На руках у человека"] = self.hand_people
         ofz_pd ['Облигаций, штук'] = ofz_pd ['На руках у человека'] / self.config.face_ofz_pd
-        ofz_pd ['Купон'] = self.config.face_ofz_pd * self.config.coupon_ofz_pd
+        ofz_pd ['Купон'] = self.config.face_ofz_pd * self.config.coupon_ofz_pd_ratio
         ofz_pd ["Доход, руб"] = ofz_pd ["Купон"] * ofz_pd ['Облигаций, штук']
-        ofz_pd ['НДФЛ'] = ofz_pd ['Доход, руб'] * self.config.ndfl
+        ofz_pd ['НДФЛ'] = ofz_pd ['Доход, руб'] * self.config.ndfl_ratio
         ofz_pd ['Доход после вычета налога'] = ofz_pd['Доход, руб'] - ofz_pd ['НДФЛ']
         self.data = ofz_pd
 
@@ -465,27 +475,11 @@ class FinancialModel:
         """
         Обновить параметры модели и пересчитать.
         """
-        # 1. Обновляем препаратор, если переданы параметры
-        # if inf_override is not None or deposit_rate is not None or deposit_decrement is not None:
-        #     self.preparer.set_parameters(
-        #         inf_override=inf_override,
-        #         deposit_rate=deposit_rate,
-        #         deposit_decrement=deposit_decrement
-        #     )
-
         # 2. Обновляем конфиг, если переданы параметры
         self.preparer.set_parameters(inf_override, deposit_rate, deposit_decrement)
-        self.config.set_parameters(attract_funds, coupon_ofz_in, coupon_ofz_pd,
-                               face_ofz_in, face_ofz_pd, people_count, ndfl)
-        # 3. Пересчитываем модель
+        # self.config.set_parameters(attract_funds, coupon_ofz_in, coupon_ofz_pd,
+        #                        face_ofz_in, face_ofz_pd, people_count, ndfl)
         self.run_all()
-        # for key, value in config_kwargs.items():
-        #     print(f"Пробуем установить {key} = {value}")
-        #     if hasattr(self.config, key):
-        #         setattr(self.config, key, value)
-        #         print(f"Установлено, новое значение: {getattr(self.config, key)}")
-        #     else:
-        #         raise AttributeError(f"ModelConfig не имеет атрибута {key}")
 if __name__ == "__main__":
     model_base = FinancialModel()
     # model_base.update(deposit_rate=10,inf_override=8)
