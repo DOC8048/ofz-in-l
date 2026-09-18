@@ -15,20 +15,7 @@ target_dep = get_deposit_rates()
 target_dep = target_dep['rate'].iloc[-1]
 deposit_decrement =  2.5
 defaults = md.ModelConfig()
-# return {
-#         'attracted': 380_000_000_000,
-#         'people': 2_000_000,
-#         'coupon_oin': 2.5,
-#         'coupon_pd': 13.74,
-#         'nominal_oin': 10000,
-#         'nominal_pd': 1000,
-#         'ndfl': 13.0,
-#         'inf_forecast': target_inf,
-#         'deposit_rate': target_dep,
-#         'deposit_decrement': 2.5
-#     }
 current_inflation = cbr_inf.get_latest_inflation()
-# DEFAULTS = get_defaults()
 
 # ============================================
 # 2. Создаём виджеты (они НЕ привязаны к session_state)
@@ -51,6 +38,7 @@ boxed_number = pn.Card(
     sizing_mode='stretch_width',
     margin=(10, 0, 10, 0),
 )
+
 inf_widget = pn.widgets.FloatInput(
     name='Прогноз инфляции на будущие годы, %',
     value= target_inf,
