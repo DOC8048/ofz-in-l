@@ -1,5 +1,7 @@
 # Только ставки по депозитам физических лиц, до востребования до 1 года 
-def get_deposit_rates():
+def get_deposit_rates(
+            start_years: int = 2020,
+            end_years: int | None=None):
     """
     Получает ставки по депозитам физических лиц, до востребования до 1 года
     
@@ -16,11 +18,13 @@ def get_deposit_rates():
     BASE_URL = "http://www.cbr.ru/dataservice"
     PUBLICATION_ID = 18
     DATASET_ID = 37
-    end_date = datetime.now().strftime('%Y')  
+    if end_years is None:
+                end_years = datetime.now().year
+    # end_date = datetime.now().strftime('%Y')  
     params = {
         "publicationId": PUBLICATION_ID,
-        "y1": 2020,
-        "y2": end_date,
+        "y1": start_years,
+        "y2": end_years,
         "i_ids": [DATASET_ID],
         "m1_ids": [2], # разрез в рублях
         "m2_ids": [7]  # разрез до востребования 1 год
