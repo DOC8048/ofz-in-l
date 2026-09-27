@@ -74,6 +74,7 @@ class InflationRatePreparer:
         # 5. Снижение ставки
         if self.deposit_decrement is None:
             dec = avg_result()
+            print(dec)
         else:
             dec = self.deposit_decrement
 
@@ -100,3 +101,7 @@ class InflationRatePreparer:
         if deposit_decrement is not None:
             self.deposit_decrement = deposit_decrement
         self.update()
+
+if __name__ == '__main__':
+    lb = InflationRatePreparer()
+    print(lb.data)
