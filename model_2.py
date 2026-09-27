@@ -312,14 +312,14 @@ def build_government_ofz_pd(
     ofz_pd_gos = inf_res.copy()
     # ofz_pd_gos = ofz_in_l_gos[['Год']].copy()
     ofz_pd_gos['Тело долга'] = config.attract_funds
-    ofz_pd_gos['Расходы на купон'] = ofz_pd_gos['Тело долга'] *config.coupon_ofz_pd 
+    ofz_pd_gos['Расходы на купоны'] = ofz_pd_gos['Тело долга'] *config.coupon_ofz_pd 
     ofz_pd_gos['Сумма возврата,НДФЛ'] = ofz_pd['НДФЛ']* config.people_count
-    ofz_pd_gos['Итого при учете возврата НДФЛ'] = ofz_pd_gos['Расходы на купон']-ofz_pd_gos['Сумма возврата,НДФЛ']
+    ofz_pd_gos['Итого при учете возврата НДФЛ'] = ofz_pd_gos['Расходы на купоны']-ofz_pd_gos['Сумма возврата,НДФЛ']
     ofz_pd_gos = ofz_pd_gos.drop(columns=['Ставка депозита'])
 
 
 # %%
-    cols2 = ['Расходы на купон','Сумма возврата,НДФЛ','Итого при учете возврата НДФЛ']
+    cols2 = ['Расходы на купоны','Сумма возврата,НДФЛ','Итого при учете возврата НДФЛ']
     total_ofz_pd_gos = pd.DataFrame([ofz_pd_gos[cols2].sum()])
     total_ofz_pd_gos['Год'] = 'Итого'
     itog_ofz_pd_gos = pd.concat([ofz_pd_gos,total_ofz_pd_gos],ignore_index=True)
